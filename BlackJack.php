@@ -1,23 +1,41 @@
 <?php
 
+/**
+ * Black Jack score 
+ * @author sanil shrestha <santonil2003@gmail.com>
+ */
 class BlackJack {
 
-    private $_messages;
-    private $_score;
-    private $_cards;
-    private $_no_of_players = 2;
+    private $_score = 0;
+    private $_cards = array();
 
+    /*
+     * Number of cards to input
+     */
+
+    const NUMBER_OF_CARDS = 2;
+
+    /**
+     * check if enviornment is cli or apache
+     * @return boolean
+     */
     public function __construct() {
         $sapi_type = php_sapi_name();
-        if (substr($sapi_type, 0, 3) != 'cgi') {
-            $this->_messages['system'] = 'Please use run this script on CLI mode !';
-            return false;
+
+        if (!preg_match('/cli|cgi/', $sapi_type)) {
+            $messages['system'] = 'Please use run this script on CLI mode !';
+            self::display($messages);
+            exit();
         }
     }
 
+    /**
+     * Input Cards 
+     * @return boolean
+     */
     private function _getCards() {
 
-        echo "\n Input Card (e.g A@H for Ace of Heart)";
+        echo "\n Input Card :";
         $line = trim(fgets(STDIN));
 
         $portion = array();
@@ -26,33 +44,89 @@ class BlackJack {
                 'face_value' => $portion[1],
                 'suit' => $portion[2],
             );
-
             return true;
         }
-
         return false;
     }
 
-    public static function display($data) {
+    /**
+     * calculate score on the basis of face
+     * @param type $face
+     * @return int
+     */
+    private static function _individualScore($face) {
 
-        $border = implode('', array_fill(0, 20, '_'));
-        echo "\n$border\n";
-        print_r($data);
-        echo "\n$border\n";
+        $face = (!is_numeric($face)) ? strtoupper($face) : $face;
+
+        switch ($face) {
+            case 'A':
+                return 11;
+                break;
+            case 'J':
+            case 'Q':
+            case 'K':
+                return 10;
+            default:
+                return (int) $face;
+                break;
+        }
     }
 
+    /**
+     * calculate overall black jack score
+     */
+    private function _calculateBlackJackScore() {
+        $total = 0;
+
+        foreach ($this->_cards as $card) {
+            $total+=self::_individualScore($card['face_value']);
+        }
+
+        $this->_score = $total;
+    }
+
+    /**
+     * temp display method
+     * @param type $data
+     */
+    public static function display($data) {
+
+        if (is_array($data)) {
+            foreach ($data as $title => $value) {
+                echo "\n" . $title . ':' . $value;
+            }
+        } else {
+            echo $data;
+        }
+    }
+
+    /**
+     * start black jack game
+     */
     public function playBlackJack() {
 
-        $no_of_inputs = $this->_no_of_players;
+        echo "\n INPUT CARD";
+        echo "\n > the first part representing the face value from 2-10, plus A, K, Q, J. ";
+        echo "\n > The second part represents the suit S, C, D, H.";
+        echo "\n > e.g 2@H";
+        echo "\n > press Ctr+Z to exit";
+
+        $no_of_inputs = self::NUMBER_OF_CARDS;
 
         while ($no_of_inputs > 0) {
             if ($this->_getCards()) {
-                
                 $no_of_inputs--;
+                continue;
             }
+
+            self::display("\n Invalid card Input \n");
         }
-        
-        self::display($this->_cards);
+
+        $this->_calculateBlackJackScore();
+
+        self::display("\n Black Jack Score :");
+        self::display($this->_score);
+        self::display("\n");
     }
 
 }
